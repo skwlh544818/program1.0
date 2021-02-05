@@ -1,5 +1,6 @@
 ﻿'''
 fun:利用最优参数组合，预测测试集精度
+lingpai:1291f328ed6db3cb01e944cf8962c414d4238386
 time:2018-7-12
 '''
 import datetime
@@ -92,6 +93,7 @@ class DBN():
 
         self.model = None
         self.history = None
+        self.sl=1
 
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -115,7 +117,7 @@ class DBN():
             print("[DBN] Layer {} Pre-Training".format(i + 1))
 
             rbm = BernoulliRBM(n_components=self.hidden_sizes[i], n_iter=self.rbm_iters,
-                               learning_rate=self.rbm_learning_rate,verbose=2, batch_size=1024)
+                               learning_rate=self.rbm_learning_rate,verbose=2, batch_size=64)
             rbm.fit(visual_layer)
             self.rbm_weights.append(rbm.components_)
 
@@ -130,7 +132,7 @@ class DBN():
         #self.data=visual_layer
 
     #微调
-    def finetune(self,dbnm,change):
+    def finetune(self,dbnm):
         dbn_s_start = time()
         print(self.hidden_sizes,dbnm.hidden_sizes)
         #输入层
@@ -138,29 +140,27 @@ class DBN():
         inputs_02=Input((dbnm.data.shape[1],),name='inputs_02')
         #全连接层
         #dense_d01 = Dropout(0.2)(inputs_01)
-        dense_010=Dense(units=1458,name='rbm_10',activation='sigmoid')(inputs_01)
-        dense_011 = Dense(units=1458, name='rbm_11', activation='sigmoid')(dense_010)
-        dense_012 = Dense(units=1458, name='rbm_12', activation='sigmoid')(dense_011)
-        dense_013 = Dense(units=1458,name='rbm_13',activation='sigmoid')(dense_012)
-        #dense_014 = Dense(units=1458, name='rbm_14', activation='sigmoid')(dense_013)
+        dense_010=Dense(units=self.hidden_sizes[0],name='rbm_10',activation='sigmoid')(inputs_01)
+        dense_011 = Dense(units=self.hidden_sizes[0], name='rbm_11', activation='sigmoid')(dense_010)
+        dense_012 = Dense(units=self.hidden_sizes[0], name='rbm_12', activation='sigmoid')(dense_011)
+        dense_013 = Dense(units=self.hidden_sizes[0],name='rbm_13',activation='sigmoid')(dense_012)
+        dense_014 = Dense(units=self.hidden_sizes[0], name='rbm_14', activation='sigmoid')(dense_013)
         #dense_d02=Dropout(0.2)(inputs_02)
-        dense_020 = Dense(units=42, name='rbm_20', activation='sigmoid')(inputs_02)
-        dense_021 = Dense(units=42, name='rbm_21', activation='sigmoid')(dense_020)
-        dense_022 = Dense(units=42, name='rbm_22', activation='sigmoid')(dense_021)
-        dense_023 = Dense(units=42, name='rbm_23', activation='sigmoid')(dense_022)
-        #dense_024 = Dense(units=42, name='rbm_24', activation='sigmoid')(dense_023)
+        dense_020 = Dense(units=dbnm.hidden_sizes[0], name='rbm_20', activation='sigmoid')(inputs_02)
+        dense_021 = Dense(units=dbnm.hidden_sizes[0], name='rbm_21', activation='sigmoid')(dense_020)
+        dense_022 = Dense(units=dbnm.hidden_sizes[0], name='rbm_22', activation='sigmoid')(dense_021)
+        dense_023 = Dense(units=dbnm.hidden_sizes[0], name='rbm_23', activation='sigmoid')(dense_022)
+        dense_024 = Dense(units=dbnm.hidden_sizes[0], name='rbm_24', activation='sigmoid')(dense_023)
         #合并层
-        merge = Concatenate(name='merge')([dense_013,dense_023])
+        merge = Concatenate(name='merge')([dense_014,dense_024])
         #dense_00=Dropout(0.1,name='dense_00')(merge)
-        dense_01=Dense(units=1000,activation='sigmoid',name='dense_01')(merge)
-        dense_02=Dense(units=512,activation='sigmoid',name='dense_02')(dense_01)
-        dense_03=Dense(units=256,activation='sigmoid',name='dense_03')(dense_02)
+        #dense_01=Dense(units=1000,activation='sigmoid',name='dense_01')(merge)
+        #dense_02=Dense(units=512,activation='sigmoid',name='dense_02')(dense_01)
+        #dense_03=Dense(units=256,activation='sigmoid',name='dense_03')(dense_02)
         #输出层
-        output_1=Dense(units=20,activation='softmax',name='output_1')(dense_02)
-        output_2=Dense(units=7,activation='softmax',name='output_2')(dense_03)
-        model = Model(inputs=[inputs_01, inputs_02], outputs=[output_1,
-                                                              output_2
-                                                              ])
+        output_1=Dense(units=20,activation='softmax',name='output_1')(merge)
+        #output_2=Dense(units=7,activation='softmax',name='output_2')(dense_03)
+        model = Model(inputs=[inputs_01, inputs_02], outputs=[output_1])
         # 显示模型情况
         plot_model(model, show_shapes=True)
         print(model.summary())
@@ -185,11 +185,10 @@ class DBN():
         model.compile(optimizer='adam',
                       loss={
                           'output_1':'categorical_crossentropy',
-                          'output_2':'categorical_crossentropy'
                       },
                       metrics=['accuracy'],
                       loss_weights={'output_1': 1,
-                                    'output_2': change,}
+                                    }
                       )
 
         for i in range(len(self.hidden_sizes)):
@@ -201,19 +200,20 @@ class DBN():
         tensorboard = TensorBoard(log_dir=self.logdir)
 
 
-        self.history = model.fit({'inputs_01':self.data,'inputs_02':dbnm.data}, {'output_1':self.targets,'output_2':self.first_targets},
+        self.history = model.fit({'inputs_01':self.data,'inputs_02':dbnm.data}, {'output_1':self.targets,},
                                  epochs=self.epochs,
-                                 batch_size=self.nn_batch_size,verbose=2,callbacks=[tensorboard], validation_data=([self.valdata,dbnm.valdata],[self.valtarget,self.first_valtarget]),
+                                 batch_size=self.nn_batch_size,verbose=2,callbacks=[tensorboard], validation_data=([self.valdata,dbnm.valdata],[self.valtarget,]),
                                  )
-        plot_picture(self.history,change)
+        plot_picture(self.history,self.sl)
         #print(self.history)
         dbn_s_end = time()
         dbn_s_span = dbn_s_end-dbn_s_start
         print("dbn_s 训练时间 : {}".format(dbn_s_span))
         self.model = model
         ###################################################
-        model.save("DBN-S.h5")
-
+        model.save("DBN-S-{}.h5".format(self.sl))
+        self.sl+=1
+        return self.history.history['val_acc']
         dbn_s_pre_start = time()
         predict_y = model.predict(x=[self.test_data,dbnm.test_data], batch_size=64)
         a=predict_y[0]
@@ -221,6 +221,7 @@ class DBN():
 
         dbn_s_pre_end = time()
         dbn_s_pre_span = dbn_s_pre_end-dbn_s_pre_start
+
         print("dbn_s 预测时间 : {}".format(dbn_s_pre_span))
         self.pre=[]
         for i in range(len(a)):
@@ -448,11 +449,35 @@ def svc(traindata,trainlabel,testdata,testlabel):
 
 def plot_picture(history,i):#需要等待
     from matplotlib import pyplot as plt
+    acc=history.history['acc']
+    val_acc=history.history['val_acc']
+    loss=history.history['loss']
+    val_loss=history.history['val_loss']
+    epochs=history.epoch
+    plt.plot(epochs, loss, 'c', label='Training loss')
+    plt.plot(epochs,val_loss,'b',label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('fig9/save_loss{}.png'.format(i))
+    plt.clf()
+    plt.plot(epochs, acc, 'c', label='Training acc ')
+    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    plt.title('Training and validation acc')
+    plt.xlabel('Epochs')
+    plt.ylabel('Acc')
+    plt.legend()
+    plt.savefig('fig9/save_acc{}.png'.format(i))
+
+    plt.clf()
+
+    '''
     acc1=history.history['output_1_acc']
     acc2=history.history['output_2_acc']
     val_acc1=history.history['val_output_1_acc']
     val_acc2=history.history['val_output_2_acc']
-    loss=history.history['loss']
+    loss = history.history['loss']
     val_loss=history.history['val_loss']
     output_1_loss=history.history['output_1_loss']
     output_2_loss=history.history['output_2_loss']
@@ -485,6 +510,7 @@ def plot_picture(history,i):#需要等待
     plt.savefig('fig9/save_acc{}.png'.format(i * 10))
 
     plt.clf()
+    '''
 
 if __name__ == '__main__':
     print("开始试验")
@@ -496,73 +522,76 @@ if __name__ == '__main__':
     num_class = 20
     first_num_class=7
     fs = 106  #特征数量
-
     # print('trainx的shape为——{}'.format(trainx.shape)
     # print('trainy的shape为——{}'.format(trainy.shape))
     # print('testx的shape为——{}'.format(testx.shape))
     # print('testy的shape为——{}'.format(testy.shape))
 
-    cengshu = [4]
-    jiedian = [1458]
-    mylayer2=[42,42,42,42]
+    cengshu = [5]
+    jiedian = [1500]
+    jiedian2=[3,5,15,25,30,45,50]
     # cengshu = [1]
     # jiedian = [60]-+++++++++++++
 
     # suiji = 666
     for i in cengshu:
         for j in jiedian:
-            print('这次训练有--------{}层,其中每层有--------{}个节点'.format(i, j))
-            mylist = []
-            mylist.append(j)
-            mylayer = mylist * i
-            print(i,j,mylayer)
-            # suiji += 5···············
-            # np.random.seed(22)
-            trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'data/train1.txt', num_class,first_num_class, fs)  # y_train
-            trainx1=trainx[:,:102]
-            trainx2=trainx[:,102:105]
-            trainx1=np.insert(trainx1,-1,trainx[:,105],axis=1)
-            #print(trainx1.shape,trainx2.shape)
-            valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'data/val1.txt',num_class,first_num_class,fs)   #y_train
-            valdata1=valdata[:,:102]
-            valdata2=valdata[:,102:105]
-            valdata1=np.insert(valdata1,-1,valdata[:,105],axis=1)
+            for k in jiedian2:
+                print('这次训练有--------{}层,其中每层有--------{}个节点'.format(i, j))
+                mylist = []
+                mylist2=[]
+                mylist.append(j)
+                mylist2.append(k)
+                mylayer = mylist * i
+                mylayer2=mylist2*i
+                print(i,j,mylayer,mylayer2)
+                # suiji += 5···············
+                # np.random.seed(22)
+                trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'data/train1.txt', num_class,first_num_class, fs)  # y_train
+                trainx1=trainx[:,:102]
+                trainx2=trainx[:,102:105]
+                trainx1=np.insert(trainx1,-1,trainx[:,105],axis=1)
+                #print(trainx1.shape,trainx2.shape)
+                valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'data/val1.txt',num_class,first_num_class,fs)   #y_train
+                valdata1=valdata[:,:102]
+                valdata2=valdata[:,102:105]
+                valdata1=np.insert(valdata1,-1,valdata[:,105],axis=1)
 
-            testx, testy, first_testy,y_test,first_y_test = readpoint(r'data/test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
-            testx1=testx[:,:102]
-            testx2=testx[:,102:105]
-            testx1=np.insert(testx1,-1,testx[:,105],axis=1)
-            #print(trainx1.shape,trainx2.shape)
-            #print(testx[:5,:5])
+                testx, testy, first_testy,y_test,first_y_test = readpoint(r'data/test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
+                testx1=testx[:,:102]
+                testx2=testx[:,102:105]
+                testx1=np.insert(testx1,-1,testx[:,105],axis=1)
+                #print(trainx1.shape,trainx2.shape)
+                #print(testx[:5,:5])
 
 
-            dbn1 = DBN(train_data=trainx1, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
+                dbn1 = DBN(train_data=trainx1, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
                         first_labeltrain=first_y_train,
                         test_data=testx1, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
                         first_labeltest=first_y_test,
                         layers=mylayer,
                         outputs=20,
-                        rbm_lr=0.0008,
+                        rbm_lr=0.0001,
                         epochs=800,
-                        rbm_iters=7,
-                        fine_tune_batch_size=256,
+                        rbm_iters=5,
+                        fine_tune_batch_size=2048,
                         outdir=r".\output",
                         logdir=r".\output\log",
                         valdata = valdata1,
                         valtarget = valtarget,
                         first_valtarget=first_valtarget,
                         )
-            dbn2 = DBN(
+                dbn2 = DBN(
                 train_data=trainx2, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
                 first_labeltrain=first_y_train,
                 test_data=testx2, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
                 first_labeltest=first_y_test,
                 layers=mylayer2,
                 outputs=20,
-                rbm_lr=0.0008,
+                rbm_lr=0.0001,
                 epochs=800,
-                rbm_iters=7,
-                fine_tune_batch_size=256,
+                rbm_iters=5,
+                fine_tune_batch_size=2048,
                 outdir=r".\output",
                 logdir=r".\output\log1",
                 valdata = valdata2,
@@ -570,28 +599,39 @@ if __name__ == '__main__':
                 first_valtarget=first_valtarget,
 
             )
-            pre_start = time()
-            dbn1.pretrain()
-            dbn2.pretrain()
-            pre_end = time()
-            pre_span = pre_end - pre_start
-            print("预训练耗时 : {}".format(pre_span))
-            fine_start = time()
-            i = 0.1
-            acc = []
-            f=open('acc1.txt','w')
-            while i <= 10:
-                acc.append(dbn1.finetune(dbn2,i))
+                pre_start = time()
+                dbn1.pretrain()
+                dbn2.pretrain()
+                pre_end = time()
+                pre_span = pre_end - pre_start
+                print("预训练耗时 : {}".format(pre_span))
+                fine_start = time()
+                f=open('acc1.txt','a')
+                acc=dbn1.finetune(dbn2)
                 f.write(str(acc))
-                fine_end = time()
-                fine_span = fine_end-fine_start
+                fine_end=time()
+                fine_span=fine_end-fine_start
                 print("微调耗时 : {}".format(fine_span))
-                if i<1:
-                    i+=0.1
-                else:
-                    i+=1
-            print(acc)
-            f.close()
+                print(acc)
+                f.close()
+                '''
+                lk = 0.1
+                acc = []
+                f=open('acc1.txt','w')
+                while lk <= 10:
+                    acc.append(dbn1.finetune(dbn2,lk))
+                    f.write(str(acc))
+                    fine_end = time()
+                    fine_span = fine_end-fine_start
+                    print("微调耗时 : {}".format(fine_span))
+                    if lk<1.0:
+                        lk+=0.1
+                    else:
+                        lk=int(lk)
+                        lk+=1
+                print(acc)
+                f.close()
+                '''
     all_end = time()
     time_span = all_end-all_start
     print("整个实验耗时 : {}".format(time_span))
