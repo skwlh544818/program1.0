@@ -26,6 +26,7 @@ from sklearn.svm import SVC
 # np.random.seed(22)
 
 import keras.backend.tensorflow_backend as KTF
+os.environ['CUDA_VISIBLE_DEVICES']="1"
 config = tf.ConfigProto(device_count={'gpu': 0})
 config.gpu_options.allow_growth = True
 config.gpu_options.per_process_gpu_memory_fraction = 0.6
@@ -45,8 +46,8 @@ class DBN():
             rbm_lr,  # 学习率，
             epochs=25,
             fine_tune_batch_size=512,
-            outdir="F:/skw544818/program/temp/",
-            logdir="F:/skw544818/program/logs/",
+            outdir="./temp/",
+            logdir="./logs/",
             pre = [],
             tre = [],
             valdata = None,
@@ -242,7 +243,7 @@ class DBN():
         res = pd.DataFrame(np.array(res).T)
         print(res.shape)
         res.to_csv(
-            "dbn-result1/dbn-s{}.txt".format(int(change*10)),
+            "dbn-s{}.txt".format(int(change*10)),
             header=[
                 "tclass2",
                 "pclass2"],
@@ -385,7 +386,7 @@ def RF(traindata,trainlabel,testdata,testlabel,change):
     res.append(pred_testlabel1)
     res = pd.DataFrame(np.array(res).T)
     res.to_csv(
-        "dbn-result1/dbn-rf{}.txt".format(change*10),
+        "dbn-rf{}.txt".format(change*10),
         header=[
             "tclass2",
             "pclass2"],
@@ -517,17 +518,17 @@ if __name__ == '__main__':
             print(i,j,mylayer)
             # suiji += 5···············
             # np.random.seed(22)
-            trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'F:\\skw544818\\program\\data\\train1.txt', num_class,first_num_class, fs)  # y_train
+            trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'data/train1.txt', num_class,first_num_class, fs)  # y_train
             trainx1=trainx[:,:102]
             trainx2=trainx[:,102:105]
             trainx1=np.insert(trainx1,-1,trainx[:,105],axis=1)
             #print(trainx1.shape,trainx2.shape)
-            valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'F:\\skw544818\\program\\data\\val1.txt',num_class,first_num_class,fs)   #y_train
+            valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'data/val1.txt',num_class,first_num_class,fs)   #y_train
             valdata1=valdata[:,:102]
             valdata2=valdata[:,102:105]
             valdata1=np.insert(valdata1,-1,valdata[:,105],axis=1)
 
-            testx, testy, first_testy,y_test,first_y_test = readpoint(r'F:\\skw544818\\program\\data\\test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
+            testx, testy, first_testy,y_test,first_y_test = readpoint(r'data/test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
             testx1=testx[:,:102]
             testx2=testx[:,102:105]
             testx1=np.insert(testx1,-1,testx[:,105],axis=1)
@@ -578,7 +579,7 @@ if __name__ == '__main__':
             fine_start = time()
             i = 0.1
             acc = []
-            f=open('F:\\skw544818\\program\\output\\acc1.txt','w')
+            f=open('acc1.txt','w')
             while i <= 10:
                 acc.append(dbn1.finetune(dbn2,i))
                 f.write(str(acc))
