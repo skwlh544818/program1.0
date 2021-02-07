@@ -93,7 +93,7 @@ class DBN():
 
         self.model = None
         self.history = None
-        self.sl=1
+        #self.sl=1
 
         if not os.path.exists(outdir):
             os.makedirs(outdir)
@@ -132,7 +132,7 @@ class DBN():
         #self.data=visual_layer
 
     #微调
-    def finetune(self,dbnm):
+    def finetune(self,dbnm,sl):
         dbn_s_start = time()
         print(self.hidden_sizes,dbnm.hidden_sizes)
         #输入层
@@ -204,15 +204,15 @@ class DBN():
                                  epochs=self.epochs,
                                  batch_size=self.nn_batch_size,verbose=2,callbacks=[tensorboard], validation_data=([self.valdata,dbnm.valdata],[self.valtarget,]),
                                  )
-        plot_picture(self.history,self.sl)
+        plot_picture(self.history,sl)
         #print(self.history)
         dbn_s_end = time()
         dbn_s_span = dbn_s_end-dbn_s_start
         print("dbn_s 训练时间 : {}".format(dbn_s_span))
         self.model = model
         ###################################################
-        model.save("DBN-S-{}.h5".format(self.sl))
-        self.sl+=1
+        model.save("DBN-S-{}.h5".format(sl))
+        #self.sl+=1
         return self.history.history['val_acc']
         dbn_s_pre_start = time()
         predict_y = model.predict(x=[self.test_data,dbnm.test_data], batch_size=64)
@@ -516,7 +516,7 @@ if __name__ == '__main__':
     print("开始试验")
     starttime = datetime.datetime.now()
     all_start = time()
-
+    sl=27
     # print(starttime)
     __spec__ = None
     num_class = 20
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
     cengshu = [5]
     jiedian = [1500]
-    jiedian2=[3,5,15,25,30,45,50]
+    jiedian2=[850,900,950,1000,1100,1200,1300,1400,1500]#[550,600,650,700,750,800]#[250,300,350,400,450,500]#[60,70,80,90,100,150,200]#[3,5,15,25,30,45,50]
     # cengshu = [1]
     # jiedian = [60]-+++++++++++++
 
@@ -607,13 +607,14 @@ if __name__ == '__main__':
                 print("预训练耗时 : {}".format(pre_span))
                 fine_start = time()
                 f=open('acc1.txt','a')
-                acc=dbn1.finetune(dbn2)
-                f.write(str(acc))
+                acc=dbn1.finetune(dbn2,sl)
+                f.write(str(acc)+'\n')
                 fine_end=time()
                 fine_span=fine_end-fine_start
                 print("微调耗时 : {}".format(fine_span))
                 print(acc)
                 f.close()
+                sl+=1
                 '''
                 lk = 0.1
                 acc = []
