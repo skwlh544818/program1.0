@@ -1,6 +1,6 @@
 ﻿'''
 fun:利用最优参数组合，预测测试集精度
-lingpai:1291f328ed6db3cb01e944cf8962c414d4238386
+lingpai:edb07fa9c38c5719781147bc7fec816b66d20150
 time:2018-7-12
 '''
 import datetime
@@ -516,7 +516,7 @@ if __name__ == '__main__':
     print("开始试验")
     starttime = datetime.datetime.now()
     all_start = time()
-    sl=27
+    sl=36
     # print(starttime)
     __spec__ = None
     num_class = 20
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
     cengshu = [5]
     jiedian = [1500]
-    jiedian2=[850,900,950,1000,1100,1200,1300,1400,1500]#[550,600,650,700,750,800]#[250,300,350,400,450,500]#[60,70,80,90,100,150,200]#[3,5,15,25,30,45,50]
+    jiedian2=[500,510,520,530,540,560,570,580,590,600]#[850,900,950,1000,1100,1200,1300,1400,1500]#[550,600,650,700,750,800]#[250,300,350,400,450,500]#[60,70,80,90,100,150,200]#[3,5,15,25,30,45,50]
     # cengshu = [1]
     # jiedian = [60]-+++++++++++++
 
@@ -606,7 +606,7 @@ if __name__ == '__main__':
                 pre_span = pre_end - pre_start
                 print("预训练耗时 : {}".format(pre_span))
                 fine_start = time()
-                f=open('acc1.txt','a')
+                f=open('acc2.txt','a')
                 acc=dbn1.finetune(dbn2,sl)
                 f.write(str(acc)+'\n')
                 fine_end=time()
