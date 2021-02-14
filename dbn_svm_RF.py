@@ -1,6 +1,6 @@
 ﻿'''
 fun:利用最优参数组合，预测测试集精度
-lingpai:5036c34ae5731c21862d1b99fdc888af8abaff1b
+lingpai:b4182dbb83f9fb8b543031e9cbc8f49958c7284d
 time:2018-7-12
 '''
 import datetime
@@ -516,7 +516,7 @@ if __name__ == '__main__':
     print("开始试验")
     starttime = datetime.datetime.now()
     all_start = time()
-    sl=58
+    sl=69
     # print(starttime)
     __spec__ = None
     num_class = 20
@@ -529,7 +529,7 @@ if __name__ == '__main__':
 
     cengshu = [5]
     jiedian = [1500]
-    jiedian2=[900,910,920,930,940,950,960,970,980,990,1000]#[550,700,710,720,730,740,750,760,770,780,790,800]#[500,510,520,530,540,560,570,580,590,600]#[850,900,950,1000,1100,1200,1300,1400,1500]#[550,600,650,700,750,800]#[250,300,350,400,450,500]#[60,70,80,90,100,150,200]#[3,5,15,25,30,45,50]
+    jiedian2=[540,540,540,540,540,710,710,710,710,710,740,740,740,740,740,910,910,910,910,910]#[900,910,920,930,940,950,960,970,980,990,1000]#[550,700,710,720,730,740,750,760,770,780,790,800]#[500,510,520,530,540,560,570,580,590,600]#[850,900,950,1000,1100,1200,1300,1400,1500]#[550,600,650,700,750,800]#[250,300,350,400,450,500]#[60,70,80,90,100,150,200]#[3,5,15,25,30,45,50]
     # cengshu = [1]
     # jiedian = [60]-+++++++++++++
 
@@ -537,84 +537,91 @@ if __name__ == '__main__':
     for i in cengshu:
         for j in jiedian:
             for k in jiedian2:
-                print('这次训练有--------{}层,其中每层有--------{}个节点'.format(i, j))
-                mylist = []
-                mylist2=[]
-                mylist.append(j)
-                mylist2.append(k)
-                mylayer = mylist * i
-                mylayer2=mylist2*i
-                print(i,j,mylayer,mylayer2)
-                # suiji += 5···············
-                # np.random.seed(22)
-                trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'data/train1.txt', num_class,first_num_class, fs)  # y_train
-                trainx1=trainx[:,:102]
-                trainx2=trainx[:,102:105]
-                trainx1=np.insert(trainx1,-1,trainx[:,105],axis=1)
-                #print(trainx1.shape,trainx2.shape)
-                valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'data/val1.txt',num_class,first_num_class,fs)   #y_train
-                valdata1=valdata[:,:102]
-                valdata2=valdata[:,102:105]
-                valdata1=np.insert(valdata1,-1,valdata[:,105],axis=1)
+                acc=[]
+                sum=0
+                for tkl in range(5):
+                    print('这次训练有--------{}层,其中每层有--------{}个节点'.format(i, j))
+                    mylist = []
+                    mylist2=[]
+                    mylist.append(j)
+                    mylist2.append(k)
+                    mylayer = mylist * i
+                    mylayer2=mylist2*i
+                    print(i,j,mylayer,mylayer2)
+                    # suiji += 5···············
+                    # np.random.seed(22)
+                    trainx, trainy,first_trainy, y_train,first_y_train = readpoint(r'data/train1.txt', num_class,first_num_class, fs)  # y_train
+                    trainx1=trainx[:,:102]
+                    trainx2=trainx[:,102:105]
+                    trainx1=np.insert(trainx1,-1,trainx[:,105],axis=1)
+                    #print(trainx1.shape,trainx2.shape)
+                    valdata, valtarget,first_valtarget,y_vjal,first_y_vjal = readpoint(r'data/val1.txt',num_class,first_num_class,fs)   #y_train
+                    valdata1=valdata[:,:102]
+                    valdata2=valdata[:,102:105]
+                    valdata1=np.insert(valdata1,-1,valdata[:,105],axis=1)
 
-                testx, testy, first_testy,y_test,first_y_test = readpoint(r'data/test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
-                testx1=testx[:,:102]
-                testx2=testx[:,102:105]
-                testx1=np.insert(testx1,-1,testx[:,105],axis=1)
-                #print(trainx1.shape,trainx2.shape)
-                #print(testx[:5,:5])
+                    testx, testy, first_testy,y_test,first_y_test = readpoint(r'data/test1.txt', num_class, first_num_class,fs)  # y_test 非onehot编码
+                    testx1=testx[:,:102]
+                    testx2=testx[:,102:105]
+                    testx1=np.insert(testx1,-1,testx[:,105],axis=1)
+                    #print(trainx1.shape,trainx2.shape)
+                    #print(testx[:5,:5])
 
 
-                dbn1 = DBN(train_data=trainx1, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
-                        first_labeltrain=first_y_train,
-                        test_data=testx1, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
-                        first_labeltest=first_y_test,
-                        layers=mylayer,
-                        outputs=20,
-                        rbm_lr=0.0001,
-                        epochs=800,
-                        rbm_iters=5,
-                        fine_tune_batch_size=2048,
-                        outdir=r".\output",
-                        logdir=r".\output\log",
-                        valdata = valdata1,
-                        valtarget = valtarget,
-                        first_valtarget=first_valtarget,
-                        )
-                dbn2 = DBN(
-                train_data=trainx2, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
-                first_labeltrain=first_y_train,
-                test_data=testx2, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
-                first_labeltest=first_y_test,
-                layers=mylayer2,
-                outputs=20,
-                rbm_lr=0.0001,
-                epochs=800,
-                rbm_iters=5,
-                fine_tune_batch_size=2048,
-                outdir=r".\output",
-                logdir=r".\output\log1",
-                valdata = valdata2,
-                valtarget = valtarget,
-                first_valtarget=first_valtarget,
+                    dbn1 = DBN(train_data=trainx1, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
+                            first_labeltrain=first_y_train,
+                            test_data=testx1, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
+                            first_labeltest=first_y_test,
+                            layers=mylayer,
+                            outputs=20,
+                            rbm_lr=0.0001,
+                            epochs=800,
+                            rbm_iters=5,
+                            fine_tune_batch_size=2048,
+                            outdir=r".\output",
+                            logdir=r".\output\log",
+                            valdata = valdata1,
+                            valtarget = valtarget,
+                            first_valtarget=first_valtarget,
+                            )
+                    dbn2 = DBN(
+                    train_data=trainx2, targets=trainy, labeltrain=y_train, first_targets=first_trainy,
+                    first_labeltrain=first_y_train,
+                    test_data=testx2, test_targets=testy, labeltest=y_test, first_test_targets=first_testy,
+                    first_labeltest=first_y_test,
+                    layers=mylayer2,
+                    outputs=20,
+                    rbm_lr=0.0001,
+                    epochs=800,
+                    rbm_iters=5,
+                    fine_tune_batch_size=2048,
+                    outdir=r".\output",
+                    logdir=r".\output\log1",
+                    valdata = valdata2,
+                    valtarget = valtarget,
+                    first_valtarget=first_valtarget,
 
-            )
-                pre_start = time()
-                dbn1.pretrain()
-                dbn2.pretrain()
-                pre_end = time()
-                pre_span = pre_end - pre_start
-                print("预训练耗时 : {}".format(pre_span))
-                fine_start = time()
-                f=open('acc2.txt','a')
-                acc=dbn1.finetune(dbn2,sl)
-                f.write(str(acc)+'\n')
-                fine_end=time()
-                fine_span=fine_end-fine_start
-                print("微调耗时 : {}".format(fine_span))
-                print(acc)
+                )
+                    pre_start = time()
+                    dbn1.pretrain()
+                    dbn2.pretrain()
+                    pre_end = time()
+                    pre_span = pre_end - pre_start
+                    print("预训练耗时 : {}".format(pre_span))
+                    fine_start = time()
+
+                    acc1=dbn1.finetune(dbn2,sl)
+                    sum+=acc1[799]
+                    fine_end=time()
+                    fine_span=fine_end-fine_start
+                    print("微调耗时 : {}".format(fine_span))
+                    sl += 1
+                f = open('acc3.txt', 'a')
+                #acc.append(sum/5)
+                f.write(str(j) + ','+str(sum/5)+'\n')
+                print(sum/5)
                 f.close()
-                sl+=1
+
                 '''
                 lk = 0.1
                 acc = []
